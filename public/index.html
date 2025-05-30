@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book List API</title>
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    background-image: url('bookstore-img.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    backdrop-filter: blur(2px);
+  }
+
+  h1 {
+    text-align: center;
+    color: black;
+  }
+
+  .book-form, .book-list {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 500px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  input, button {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  button {
+    background-color: #2563eb;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #1d4ed8;
+  }
+
+  li {
+    list-style: none;
+    margin-bottom: 10px;
+  }
+
+  li button {
+    margin-left: 10px;
+    width: auto;
+    display: inline;
+    padding: 5px 10px;
+  }
+ @media (min-width: 601px) and (max-width: 768px) {
+  body {
+    padding: 10px;
+    background-size: cover;
+    background-position: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .book-form,
+  .book-list {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 12px;
+  }
+
+  .book-form h2,
+  .book-list h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  input[type="text"] {
+    font-size: 14px;
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  button {
+    font-size: 15px;
+    padding: 12px;
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .delete-button {
+    font-size: 13px;
+    padding: 8px;
+    margin-left: 5px;
+  }
+
+  .book-item {
+    display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  }
+}
+
+
+</style>
+
+</head>
+<body>
+
+  <h1>📚 Book Manager</h1>
+
+  <div class="book-form">
+    <h3>Add a New Book</h3>
+    <input id="title" type="text" placeholder="Book Title" />
+    <input id="author" type="text" placeholder="Author Name" />
+    <button onclick="addBook()">Add Book</button>
+  </div>
+
+  <div class="book-list">
+    <h3>Books List</h3>
+    <ul id="books"></ul>
+  </div>
+
+  <script>
+  let editingBookId = null;
+
+  async function fetchBooks() {
+    const res = await fetch('http://localhost:3000/books');
+    const books = await res.json();
+    const bookList = document.getElementById('books');
+    bookList.innerHTML = '';
+
+    books.forEach(book => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <strong>${book.title}</strong> by ${book.author}
+        <button onclick="editBook(${book.id}, '${book.title}', '${book.author}')">✏️</button>
+        <button onclick="deleteBook(${book.id})">❌</button>
+      `;
+      bookList.appendChild(li);
+    });
+  }
+
+  async function addBook() {
+    const title = document.getElementById('title').value;
+    const author = document.getElementById('author').value;
+
+    if (editingBookId) {
+      await fetch(`http://localhost:3000/books/${editingBookId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author })
+      });
+      editingBookId = null;
+    } else {
+      await fetch('http://localhost:3000/books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author })
+      });
+    }
+
+    document.getElementById('title').value = '';
+    document.getElementById('author').value = '';
+    fetchBooks();
+  }
+
+  function editBook(id, title, author) {
+    document.getElementById('title').value = title;
+    document.getElementById('author').value = author;
+    editingBookId = id;
+  }
+
+  async function deleteBook(id) {
+    await fetch(`http://localhost:3000/books/${id}`, { method: 'DELETE' });
+    fetchBooks();
+  }
+
+  window.onload = fetchBooks;
+</script>
+
+</body>
+</html>
